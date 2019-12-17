@@ -1,0 +1,41 @@
+version: '3'
+services:
+  radicale:
+    image: tomsquest/docker-radicale
+    container_name: radicale
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
+      - CHOWN
+      - KILL
+    restart: unless-stopped
+    volumes:
+      - "$STACK_DATA/radical/data:/data"
+      - "$STACK_DIR/configs/radicale:/config/config:ro"
+      - "$STACK_DATA/radical/users:/users:ro"
+    networks:
+      - "webapp"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radicale.rule=Host(`radicale.${DOMAIN}`)"
+      - "traefik.http.routers.radicale.entrypoints=websecure"
+      - "traefik.http.routers.radicale.tls.certresolver=leresolver"
+      - "traefik.http.middlewares.radicaleHeaders.headers.contentSecurityPolicy=default-src 'self'; style-src 'self' 'unsafe-inline'"
+      - "traefik.http.middlewares.radicaleHeaders.headers.framedeny=true"
+      - "traefik.http.middlewares.radicaleHeaders.headers.sslredirect=true"
+      - "traefik.http.middlewares.radicaleHeaders.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.radicaleHeaders.headers.stsPreload=true"
+      - "traefik.http.middlewares.radicaleHeaders.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.radicaleHeaders.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.radicaleHeaders.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.radicaleHeaders.headers.stsSeconds=31536000"
+      - "traefik.http.routers.radicale.middlewares=radicaleHeaders"
+networks:
+  webapp:
+    external:
+      name: 'webapp'
